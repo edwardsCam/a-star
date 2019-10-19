@@ -5,22 +5,10 @@ import Cursor from 'classes/cursor'
 import checkers from 'utils/checkers'
 import drawSquare from 'utils/drawSquare'
 import tilePriorityQueue from 'utils/tilePriorityQueue'
-import { N, SIZE, SQUARE_WIDTH, BORDER_WIDTH, DELAY } from './constants'
+import { toggleShowInfo } from 'utils/ui'
+import { N, SIZE, DELAY } from './constants'
 
-const start = [0, 0]
-const goal = [19, 19]
-
-const q = tilePriorityQueue()
-const grid = new Grid({ size: N })
-let cursor = new Cursor({
-  pos: start,
-  h: Math.distance(start, goal),
-})
-let done = false
-let isPaused = false
-let mod = 0
-
-const walls = [
+let walls = [
   [0, 5],
   [1, 13],
   [1, 5],
@@ -93,22 +81,91 @@ const walls = [
   [9, 8],
 ]
 
+const startPosition = [0, 0]
+const goalPosition = [19, 19]
+
+let q
+let grid
+let cursor
+let done = false
+let isPaused = false
+let isPlacing = false
+let mod = 0
+
+const primaryActionBtn = document.getElementById('primaryActionBtn')
+const showInfoBtn = document.getElementById('showInfoBtn')
+const customBtn = document.getElementById('customBtn')
+showInfoBtn.onclick = () => {
+  if (toggleShowInfo()) {
+    showInfoBtn.innerHTML = 'Hide Info'
+  } else {
+    showInfoBtn.innerHTML = 'Show Info'
+  }
+  drawAll()
+}
+
+customBtn.onclick = () => {
+  isPlacing = true
+  customBtn.disabled = true
+  walls = []
+  init()
+
+  grid.forEach((r, c, tile) => {
+    const pos = [r, c]
+    document.getElementById(`r-${r}_c-${c}`).onclick = () => {
+      grid.mark(pos, 99)
+      walls.push(pos)
+      draw(pos)
+    }
+  })
+}
+
 init()
 
-document.getElementById('startBtn').onclick = doWork
-document.getElementById('pauseBtn').onclick = () => isPaused = !isPaused
-
 function init() {
+  primaryActionBtn.innerHTML = 'Start'
+  primaryActionBtn.onclick = start
+  cursor = new Cursor({
+    pos: startPosition,
+    h: Math.distance(startPosition, goalPosition),
+  })
+  grid = new Grid({ size: N })
+  q = tilePriorityQueue()
   q.push(cursor)
   const gridElement = document.getElementById('grid')
   gridElement.style.width = gridElement.style.height = `${SIZE}px`
-  grid.mark(start, 'checked')
-  grid.mark(start, 'considered')
-  grid.mark(start, 'start')
-  grid.mark(goal, 'goal')
+  grid.mark(startPosition, 'checked')
+  grid.mark(startPosition, 'considered')
+  grid.mark(startPosition, 'start')
+  grid.mark(goalPosition, 'goal')
   walls.forEach(wall => grid.mark(wall, 99))
 
   drawAll()
+}
+
+function start() {
+  done = false
+  isPlacing = true
+  customBtn.disabled = false
+  grid.forEach((r, c, tile) => {
+    document.getElementById(`r-${r}_c-${c}`).onclick = undefined
+  })
+  primaryActionBtn.innerHTML = 'Pause'
+  primaryActionBtn.onclick = () => {
+    isPaused = !isPaused
+    if (isPaused) {
+      primaryActionBtn.innerHTML = 'Resume'
+    } else {
+      primaryActionBtn.innerHTML = 'Pause'
+    }
+  }
+  doWork()
+}
+
+function finish() {
+  markPath(getShortestPath())
+  primaryActionBtn.innerHTML = 'Clear'
+  primaryActionBtn.onclick = () => init()
 }
 
 function doWork() {
@@ -117,12 +174,15 @@ function doWork() {
     return
   }
   if (done) {
-    markPath(getShortestPath())
+    finish()
     return
   }
   if (mod === 0) {
     cursor = q.pop()
-    if (cursor.pos[0] !== start[0] || cursor.pos[1] !== start[1]) {
+    if (
+      cursor.pos[0] !== startPosition[0] ||
+      cursor.pos[1] !== startPosition[1]
+    ) {
       mark(cursor.pos, 'considered')
     }
     document.getElementById('cursor-pos').innerHTML = `[ ${cursor.pos[0]}, ${
@@ -181,13 +241,13 @@ function mark(pos, val) {
 }
 
 function checkTile(r, c, tile) {
-  if (r === goal[0] && c === goal[1]) {
+  if (r === goalPosition[0] && c === goalPosition[1]) {
     done = true
     return
   }
   const pos = [r, c]
   const g = cursor.g + tile.cost
-  const h = Math.distance(pos, goal)
+  const h = Math.distance(pos, goalPosition)
   tile.updateStats(g, h)
 
   const alreadyChecked = tile.checked
@@ -203,14 +263,11 @@ function checkTile(r, c, tile) {
   }
 }
 
-function draw([ r, c ]) {
-  const square = document.getElementById(`r-${r}_c-${c}`)
-  drawSquare(r, c, grid.getTileAt(r, c), SQUARE_WIDTH, BORDER_WIDTH)
+function draw([r, c]) {
+  drawSquare(r, c, grid.getTileAt(r, c))
 }
 
 function drawAll() {
   document.getElementById('grid').innerHTML = ''
-  grid.forEach((r, c, tile) => {
-    drawSquare(r, c, tile, SQUARE_WIDTH, BORDER_WIDTH)
-  })
+  grid.forEach(drawSquare)
 }
