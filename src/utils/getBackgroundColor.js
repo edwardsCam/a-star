@@ -7,7 +7,7 @@ const overlays = {
 }
 
 export default function getBackgroundColor(tile) {
-  if (tile.cost > 1) {
+  if (tile.getCost() > 1) {
     return 'black'
   }
   if (tile.overlay === 'path') {
@@ -22,6 +22,6 @@ export default function getBackgroundColor(tile) {
   if (tile.checked) {
     return overlays.checked
   }
-  const hex = Math.floor(Math.interpolate([1, 10], [255, 0], tile.cost))
+  const hex = Math.floor(Math.interpolate([1, 10], [255, 0], tile.getCost()))
   return `rgb(${hex}, ${hex}, ${hex})`
 }

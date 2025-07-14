@@ -16,6 +16,10 @@ export default class Grid {
     return this.rows[r][c]
   }
 
+  getCostAt(r, c) {
+    return this.getTileAt(r, c).getCost()
+  }
+
   forEach(cb) {
     this.rows.forEach((row, r) => {
       row.forEach((tile, c) => {
@@ -39,5 +43,11 @@ export default class Grid {
     } else {
       tile.setCost(mark)
     }
+  }
+
+  unmark(pos) {
+    const [r, c] = pos
+    const tile = this.rows[r][c]
+    tile.reset()
   }
 }

@@ -1,13 +1,18 @@
 const validOverlays = ['path', 'start', 'goal', 'checked', 'considered']
 
 export default class Tile {
+  #cost
+
   constructor() {
-    this.setCost(1)
     this.reset()
   }
 
   setCost(cost) {
     this.cost = cost
+  }
+
+  getCost() {
+    return this.cost
   }
 
   setOverlay(overlay) {
@@ -45,5 +50,6 @@ export default class Tile {
     this.considered = false
     this.checked = false
     this.bestKnownStats = {}
+    this.setCost(1)
   }
 }

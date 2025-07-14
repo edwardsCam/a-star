@@ -113,8 +113,13 @@ customBtn.onclick = () => {
   grid.forEach((r, c, tile) => {
     const pos = [r, c]
     document.getElementById(`r-${r}_c-${c}`).onclick = () => {
-      grid.mark(pos, 99)
-      walls.push(pos)
+      if (grid.getCostAt(r, c) > 1) {
+        grid.unmark(pos)
+        walls = walls.filter(wall => wall[0] !== pos[0] && wall[1] !== pos[1])
+      } else {
+        grid.mark(pos, 99)
+        walls.push(pos)
+      }
       draw(pos)
     }
   })
@@ -246,7 +251,7 @@ function checkTile(r, c, tile) {
     return
   }
   const pos = [r, c]
-  const g = cursor.g + tile.cost
+  const g = cursor.g + tile.getCost()
   const h = Math.distance(pos, goalPosition)
   tile.updateStats(g, h)
 
